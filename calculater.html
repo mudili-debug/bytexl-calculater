@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font import for a cleaner look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        /* Basic styles for the body and a responsive font size */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: black;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* The main calculator container with a max width for mobile feel */
+        .calculator-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100vh; /* Full height on mobile screens */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Align content to the bottom */
+            padding: 24px 16px;
+        }
+
+        /* Custom styles for the calculator buttons to ensure circular shape and alignment */
+        .button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 9999px; /* This makes the buttons perfectly circular */
+            aspect-ratio: 1 / 1; /* Ensures buttons are square, which combined with border-radius makes them circles */
+            font-size: 2.25rem; /* 36px */
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.1s ease-in-out;
+            user-select: none;
+        }
+        
+        /* Styling for the large '0' button, which spans two columns */
+        .button-zero {
+            border-radius: 9999px;
+            aspect-ratio: auto;
+            text-align: left;
+            padding-left: 2rem;
+            width: 100%;
+        }
+
+        /* Add a subtle hover effect to buttons */
+        .button:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="bg-black text-white">
+
+    <!-- Main calculator container with a dark background -->
+    <div class="calculator-container bg-black">
+
+        <!-- Display section -->
+        <div class="display flex-1 flex flex-col justify-end items-end text-right p-4">
+            <!-- The result/input display, large font size -->
+            <div id="display-text" class="text-7xl font-light tracking-tight mb-4">0</div>
+        </div>
+
+        <!-- Buttons section, using a CSS Grid layout -->
+        <div class="grid grid-cols-4 gap-3">
+            
+            <!-- Row 1: AC, +/-, % -->
+            <div class="button bg-zinc-500 text-black text-2xl font-semibold" data-action="clear">AC</div>
+            <div class="button bg-zinc-500 text-black text-2xl font-semibold" data-action="toggleSign">+/-</div>
+            <div class="button bg-zinc-500 text-black text-2xl font-semibold" data-action="percent">%</div>
+            <div class="button bg-orange-500 text-white text-3xl font-semibold" data-action="divide">÷</div>
+
+            <!-- Row 2: 7, 8, 9, x -->
+            <div class="button bg-zinc-700" data-action="number">7</div>
+            <div class="button bg-zinc-700" data-action="number">8</div>
+            <div class="button bg-zinc-700" data-action="number">9</div>
+            <div class="button bg-orange-500 text-white text-3xl font-semibold" data-action="multiply">×</div>
+
+            <!-- Row 3: 4, 5, 6, - -->
+            <div class="button bg-zinc-700" data-action="number">4</div>
+            <div class="button bg-zinc-700" data-action="number">5</div>
+            <div class="button bg-zinc-700" data-action="number">6</div>
+            <div class="button bg-orange-500 text-white text-3xl font-semibold" data-action="subtract">−</div>
+
+            <!-- Row 4: 1, 2, 3, + -->
+            <div class="button bg-zinc-700" data-action="number">1</div>
+            <div class="button bg-zinc-700" data-action="number">2</div>
+            <div class="button bg-zinc-700" data-action="number">3</div>
+            <div class="button bg-orange-500 text-white text-3xl font-semibold" data-action="add">+</div>
+
+            <!-- Row 5: 0, ., = -->
+            <!-- The '0' button is special, it spans two columns -->
+            <div class="col-span-2 button button-zero bg-zinc-700" data-action="number">0</div>
+            <div class="button bg-zinc-700" data-action="decimal">,</div>
+            <div class="button bg-orange-500 text-white text-3xl font-semibold" data-action="calculate">=</div>
+        </div>
+    </div>
+    
+    <script>
+        // The main calculator logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const display = document.getElementById('display-text');
+            const calculator = document.querySelector('.calculator-container');
+            let firstOperand = null;
+            let operator = null;
+            let waitingForSecondOperand = false;
+            
+            // Function to update the display
+            const updateDisplay = () => {
+                const value = display.textContent;
+                // Limit the display to a reasonable number of characters to prevent overflow
+                if (value.length > 9) {
+                    display.textContent = Number(value).toPrecision(7);
+                } else {
+                    display.textContent = value;
+                }
+            };
+            
+            // Function to perform the calculation
+            const performCalculation = () => {
+                if (firstOperand === null || operator === null) return;
+
+                const secondOperand = parseFloat(display.textContent);
+                let result = 0;
+
+                switch (operator) {
+                    case 'add':
+                        result = firstOperand + secondOperand;
+                        break;
+                    case 'subtract':
+                        result = firstOperand - secondOperand;
+                        break;
+                    case 'multiply':
+                        result = firstOperand * secondOperand;
+                        break;
+                    case 'divide':
+                        result = firstOperand / secondOperand;
+                        break;
+                    default:
+                        return;
+                }
+                
+                // Format the result to handle floating-point precision issues
+                display.textContent = String(result);
+                firstOperand = result;
+                waitingForSecondOperand = true;
+                operator = null;
+            };
+
+            // Event listener for button clicks
+            calculator.addEventListener('click', (event) => {
+                const target = event.target;
+                if (!target.classList.contains('button')) return;
+
+                const action = target.dataset.action;
+                const buttonContent = target.textContent;
+
+                if (action === 'number') {
+                    if (waitingForSecondOperand) {
+                        display.textContent = buttonContent;
+                        waitingForSecondOperand = false;
+                    } else {
+                        display.textContent = display.textContent === '0' ? buttonContent : display.textContent + buttonContent;
+                    }
+                } else if (action === 'decimal') {
+                    if (!display.textContent.includes('.')) {
+                        display.textContent += '.';
+                    }
+                } else if (action === 'clear') {
+                    display.textContent = '0';
+                    firstOperand = null;
+                    operator = null;
+                    waitingForSecondOperand = false;
+                } else if (action === 'toggleSign') {
+                    const value = parseFloat(display.textContent);
+                    display.textContent = String(value * -1);
+                } else if (action === 'percent') {
+                    const value = parseFloat(display.textContent);
+                    display.textContent = String(value / 100);
+                } else if (action === 'calculate') {
+                    performCalculation();
+                } else if (['add', 'subtract', 'multiply', 'divide'].includes(action)) {
+                    if (firstOperand === null) {
+                        firstOperand = parseFloat(display.textContent);
+                    } else if (operator) {
+                         performCalculation();
+                    }
+                    operator = action;
+                    waitingForSecondOperand = true;
+                }
+                updateDisplay();
+            });
+        });
+    </script>
+</body>
+</html>
